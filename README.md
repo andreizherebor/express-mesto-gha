@@ -48,4 +48,3 @@ https://github.com/andreizherebor/express-mesto-gha
 
 ## База данных:
 - MongoDB
-https://github.com/andreizherebor/express-mesto-gha
