@@ -103,19 +103,20 @@ const updateAvatar = (req, res, next) => {
 };
 
 const getCurrentUser = (req, res, next) => {
-  User.findById(req.user._id)
-    .orFail(() => {
-      throw new NotFound('Пользователь не найден');
-    })
-    .then((user) => res.status(200).send({ user }))
-    .catch((err) => {
-      if (err.name === 'CastError') {
-        throw new BadRequest('Переданы некорректные данные');
-      } else if (err.message === 'NotFound') {
+  User.findById(req.params.id)
+    .then((user) => {
+      if (!user) {
         throw new NotFound('Пользователь не найден');
       }
+      res.send({ data: user });
     })
-    .catch(next);
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        next(new BadRequest('Передан некорретный Id'));
+        return;
+      }
+      next(err);
+    });
 };
 
 const login = (req, res, next) => {
