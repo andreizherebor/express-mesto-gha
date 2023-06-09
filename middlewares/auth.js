@@ -12,7 +12,7 @@ module.exports = (req, res, next) => {
   let payload;
 
   try {
-    payload = jwt.verify(token, 'yandex-praktikum');
+    payload = jwt.verify(token, 'some-secret-key');
   } catch (err) {
     throw new AuthError('Необходима авторизация');
   }
