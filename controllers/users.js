@@ -12,19 +12,19 @@ const getUsers = (req, res, next) => {
 };
 
 const getUser = (req, res, next) => {
-  const userId = req.user._id;
+  const { userId } = req.params;
 
-  User.findById(userId)
-    .then((user) => {
-      if (!user) {
-        throw new NotFound('Пользователь не найден');
-      }
-      res.send({ data: user });
+  return User.findById(userId)
+    .orFail(() => {
+      throw new NotFound('Пользователь по указанному _id не найден');
     })
+    .then((user) => res.send(user))
     .catch((err) => {
       if (err.name === 'CastError') {
-        next(new BadRequest('Передан некорретный Id'));
-        return;
+        next(new BadRequest('Переданы некорректные данные'));
+      }
+      if (err.message === 'NotFound') {
+        next(new NotFound('Пользователь по указанному _id не найден'));
       }
       next(err);
     });
