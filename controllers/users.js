@@ -12,19 +12,19 @@ const getUsers = (req, res, next) => {
 };
 
 const getUser = (req, res, next) => {
-  const { userId } = req.params;
+  const userId = req.user._id;
 
-  return User.findById(userId)
-    .orFail(() => {
-      throw new NotFound('Пользователь по указанному _id не найден');
+  User.findById(userId)
+    .then((user) => {
+      if (!user) {
+        throw new NotFound('Пользователь не найден');
+      }
+      res.send({ data: user });
     })
-    .then((user) => res.send(user))
     .catch((err) => {
       if (err.name === 'CastError') {
-        next(new BadRequest('Переданы некорректные данные'));
-      }
-      if (err.message === 'NotFound') {
-        next(new NotFound('Пользователь по указанному _id не найден'));
+        next(new BadRequest('Передан некорретный Id'));
+        return;
       }
       next(err);
     });
@@ -80,43 +80,36 @@ const updateUser = (req, res, next) => {
 const updateAvatar = (req, res, next) => {
   const { avatar } = req.body;
 
-  User.findByIdAndUpdate(
+  return User.findByIdAndUpdate(
     req.user._id,
     { avatar },
-    {
-      new: true,
-      runValidators: true,
-    },
-  )
-    .then((user) => res.send({ data: user }))
+    { new: true, runValidators: true },
+  ).orFail(() => {
+    throw new NotFound('Пользователь с указанным _id не найден');
+  })
+    .then((user) => res.status(200).send(user))
     .catch((err) => {
-      if (err.name === 'ValidationError') {
-        return next(new BadRequest('Введены некорретные данные'));
+      if (err.name === 'ValidationError' || err.name === 'CastError') {
+        throw new BadRequest('Переданы некорректные данные при обновлении аватара');
       }
-
-      if (err.name === 'CastError') {
-        return next(new BadRequest('Передан некорретный Id'));
-      }
-
-      next(err);
-    });
+    })
+    .catch(next);
 };
 
 const getCurrentUser = (req, res, next) => {
-  User.findById(req.params.id)
-    .then((user) => {
-      if (!user) {
-        throw new NotFound('Пользователь не найден');
-      }
-      res.send({ data: user });
+  User.findById(req.user._id)
+    .orFail(() => {
+      throw new NotFound('Пользователь не найден');
     })
+    .then((user) => res.status(200).send({ user }))
     .catch((err) => {
       if (err.name === 'CastError') {
-        next(new BadRequest('Передан некорретный Id'));
-        return;
+        throw new BadRequest('Переданы некорректные данные');
+      } else if (err.message === 'NotFound') {
+        throw new NotFound('Пользователь не найден');
       }
-      next(err);
-    });
+    })
+    .catch(next);
 };
 
 const login = (req, res, next) => {
