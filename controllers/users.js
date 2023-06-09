@@ -81,11 +81,6 @@ const updateAvatar = (req, res, next) => {
     throw new NotFound('Пользователь с указанным _id не найден');
   })
     .then((user) => res.status(200).send(user))
-    /* .catch((err) => {
-      if (err.name === 'ValidationError' || err.name === 'CastError') {
-        throw new BadRequest('Переданы некорректные данные при обновлении аватара');
-      }
-    }) */
     .catch(next);
 };
 
@@ -95,13 +90,6 @@ const getCurrentUser = (req, res, next) => {
       throw new NotFound('Пользователь не найден');
     })
     .then((user) => res.status(200).send({ user }))
-    /* .catch((err) => {
-      if (err.name === 'CastError') {
-        throw new BadRequest('Переданы некорректные данные');
-      } else if (err.message === 'NotFound') {
-        throw new NotFound('Пользователь не найден');
-      }
-    }) */
     .catch(next);
 };
 
