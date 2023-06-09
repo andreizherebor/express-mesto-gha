@@ -4,6 +4,7 @@ const User = require('../models/user');
 const NotFound = require('../errors/NotFoundError');
 const BadRequest = require('../errors/BadRequest');
 const ConflictError = require('../errors/ConflictError');
+const AuthError = require('../errors/AuthError');
 
 const getUsers = (req, res, next) => {
   User.find({})
@@ -60,21 +61,26 @@ const createUser = (req, res, next) => {
 
 const updateUser = (req, res, next) => {
   const { name, about } = req.body;
-
-  return User.findByIdAndUpdate(
+  User.findByIdAndUpdate(
     req.user._id,
     { name, about },
-    { new: true, runValidators: true },
-  ).orFail(() => {
-    throw new NotFound('Пользователь с указанным _id не найден');
-  })
-    .then((user) => res.status(200).send(user))
+    {
+      new: true,
+      runValidators: true,
+    },
+  )
+    .then((user) => res.send({ data: user }))
     .catch((err) => {
-      if (err.name === 'ValidationError' || err.name === 'CastError') {
-        throw new BadRequest('Переданы некорректные данные при обновлении профиля');
+      if (err.name === 'ValidationError') {
+        return next(new BadRequest('Введены некорретные данные'));
       }
-    })
-    .catch(next);
+
+      if (err.name === 'CastError') {
+        return next(new BadRequest('Передан некорретный Id'));
+      }
+
+      next(err);
+    });
 };
 
 const updateAvatar = (req, res, next) => {
@@ -97,19 +103,20 @@ const updateAvatar = (req, res, next) => {
 };
 
 const getCurrentUser = (req, res, next) => {
-  User.findById(req.user._id)
-    .orFail(() => {
-      throw new NotFound('Пользователь не найден');
-    })
-    .then((user) => res.status(200).send({ user }))
-    .catch((err) => {
-      if (err.name === 'CastError') {
-        throw new BadRequest('Переданы некорректные данные');
-      } else if (err.message === 'NotFound') {
+  User.findById(req.params.id)
+    .then((user) => {
+      if (!user) {
         throw new NotFound('Пользователь не найден');
       }
+      res.send({ data: user });
     })
-    .catch(next);
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        next(new BadRequest('Передан некорретный Id'));
+        return;
+      }
+      next(err);
+    });
 };
 
 const login = (req, res, next) => {
@@ -120,7 +127,9 @@ const login = (req, res, next) => {
       const token = jwt.sign({ _id: user._id }, 'yandex-praktikum', { expiresIn: '7d' });
       res.send({ token });
     })
-    .catch(next);
+    .catch((err) => {
+      next(new AuthError(err.message));
+    });
 };
 
 module.exports = {
