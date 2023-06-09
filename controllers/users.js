@@ -22,12 +22,9 @@ const getUser = (req, res, next) => {
     .then((user) => res.send(user))
     .catch((err) => {
       if (err.name === 'CastError') {
-        next(new BadRequest('Переданы некорректные данные'));
+        return next(new BadRequest('Переданы некорректные данные'));
       }
-      if (err.message === 'NotFound') {
-        next(new NotFound('Пользователь по указанному _id не найден'));
-      }
-      next(err);
+      return next(err);
     });
 };
 
@@ -70,11 +67,6 @@ const updateUser = (req, res, next) => {
     throw new NotFound('Пользователь с указанным _id не найден');
   })
     .then((user) => res.status(200).send(user))
-    .catch((err) => {
-      if (err.name === 'ValidationError' || err.name === 'CastError') {
-        throw new BadRequest('Переданы некорректные данные при обновлении профиля');
-      }
-    })
     .catch(next);
 };
 
@@ -89,11 +81,11 @@ const updateAvatar = (req, res, next) => {
     throw new NotFound('Пользователь с указанным _id не найден');
   })
     .then((user) => res.status(200).send(user))
-    .catch((err) => {
+    /* .catch((err) => {
       if (err.name === 'ValidationError' || err.name === 'CastError') {
         throw new BadRequest('Переданы некорректные данные при обновлении аватара');
       }
-    })
+    }) */
     .catch(next);
 };
 
@@ -103,13 +95,13 @@ const getCurrentUser = (req, res, next) => {
       throw new NotFound('Пользователь не найден');
     })
     .then((user) => res.status(200).send({ user }))
-    .catch((err) => {
+    /* .catch((err) => {
       if (err.name === 'CastError') {
         throw new BadRequest('Переданы некорректные данные');
       } else if (err.message === 'NotFound') {
         throw new NotFound('Пользователь не найден');
       }
-    })
+    }) */
     .catch(next);
 };
 
